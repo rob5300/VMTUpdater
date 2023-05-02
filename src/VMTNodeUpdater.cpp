@@ -24,12 +24,26 @@ void UpdateNodeNames(CVMTFile& vmtFile);
 void UpdateVMTNodes(filesystem::path path)
 {
 	CVMTFile vmtFile;
-	vmtFile.Load(path.string().c_str());
+	auto pathstr = path.string();
+	printf("- Load %s\n", pathstr.c_str());
+	vmtFile.Load(pathstr.c_str());
 
 	UpdateNodeNames(vmtFile);
 
-
-	//vmtFile.Save()
+	//construct new path and save
+	auto newPath = path.parent_path();
+	newPath /= "updated";
+	newPath /= path.filename();
+	auto newPathstr = newPath.string();
+	bool saved = vmtFile.Save(newPathstr.c_str());
+	if (saved)
+	{
+		printf("- Saved to %s\n", newPathstr.c_str());
+	}
+	else
+	{
+		printf("- FAILED to save to %s", newPathstr.c_str());
+	}
 }
 
 void UpdateNodeNames(CVMTFile& vmtFile)
@@ -41,18 +55,21 @@ void UpdateNodeNames(CVMTFile& vmtFile)
 
 	if (shaderMappings.contains(oldShader))
 	{
-		root->AddStringNode("shader", shaderMappings[oldShader].c_str());
+		auto newShader = shaderMappings[oldShader].c_str();
+		root->AddStringNode("shader", newShader);
+		printf("- Update shader from %s -> %s\n", oldShader.c_str(), newShader);
 	}
 
 	int32_t nodeCount = root->GetNodeCount();
 	for (int i = 0; i < nodeCount; i++)
 	{
 		auto node = root->GetNode(i);
-
-		auto nodeName = node->GetName();
+		string nodeName = string(node->GetName());
 		if (nodeMappings.contains(nodeName))
 		{
-			static_cast<CVMTStringNode*>(node)->SetValue(nodeMappings[nodeName].c_str());
+			auto newVal = nodeMappings[nodeName].c_str();
+			static_cast<CVMTStringNode*>(node)->SetName(newVal);
+			printf("- Update %s name to -> %s\n", nodeName.c_str(), newVal);
 		}
 	}
 }

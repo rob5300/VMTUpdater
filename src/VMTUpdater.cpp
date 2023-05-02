@@ -37,6 +37,12 @@ int main(int argc, char *argv[])
 
     int32_t processedFilesCount = 0;
     filesystem::path workingDirPath(workingDir);
+
+    //Create updated dir
+    auto updatedDir = workingDirPath;
+    updatedDir /= "updated";
+    filesystem::create_directory(updatedDir);
+
     for (auto const& dir_entry : filesystem::directory_iterator{workingDirPath}) 
     {
         auto extension = dir_entry.path().extension();
