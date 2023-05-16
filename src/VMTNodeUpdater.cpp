@@ -11,7 +11,6 @@ map<string, string> nodeMappings
 {
 	{"$basetexture", "TextureColor"},
 	{"$phong", "F_SPECULAR"},
-	
 };
 
 map<string, string> shaderMappings
@@ -27,6 +26,14 @@ void UpdateVMTNodes(filesystem::path path)
 	auto pathstr = path.string();
 	printf("- Load %s\n", pathstr.c_str());
 	vmtFile.Load(pathstr.c_str());
+
+	//Remove proxy data
+	auto rootNode = vmtFile.GetRoot();
+	auto proxyNode = rootNode->GetNode("Proxies");
+	if (proxyNode != nullptr)
+	{
+		rootNode->RemoveNode(proxyNode);
+	}
 
 	UpdateNodeNames(vmtFile);
 
@@ -53,7 +60,7 @@ void UpdateNodeNames(CVMTFile& vmtFile)
 	string oldShader = string(root->GetName());
 	root->SetName("Layer0");
 
-	if (shaderMappings.contains(oldShader))
+	if (shaderMappings.find(oldShader) != shaderMappings.end())
 	{
 		auto newShader = shaderMappings[oldShader].c_str();
 		root->AddStringNode("shader", newShader);
@@ -65,7 +72,7 @@ void UpdateNodeNames(CVMTFile& vmtFile)
 	{
 		auto node = root->GetNode(i);
 		string nodeName = string(node->GetName());
-		if (nodeMappings.contains(nodeName))
+		if (nodeMappings.find(nodeName) != nodeMappings.end())
 		{
 			auto newVal = nodeMappings[nodeName].c_str();
 			static_cast<CVMTStringNode*>(node)->SetName(newVal);

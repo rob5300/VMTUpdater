@@ -20,38 +20,5 @@
 	"$sheenmapmaskframe" "0"
 	"$sheenindex" "0"
 	"$yellow" "0"
-	"Proxies"
-	{
-		"AnimatedWeaponSheen"
-		{
-			"animatedtexturevar" "$sheenmapmask"
-			"animatedtextureframenumvar" "$sheenmapmaskframe"
-			"animatedtextureframerate" "40"
-		}
-		"ModelGlowColor"
-		{
-			"resultVar" "$glowcolor"
-		}
-		"Equals"
-		{
-			"srcVar1" "$glowcolor"
-			"resultVar" "$selfillumtint"
-		}
-		"Equals"
-		{
-			"srcVar1" "$glowcolor"
-			"resultVar" "$color2"
-		}
-		"YellowLevel"
-		{
-			"resultVar" "$yellow"
-		}
-		"Multiply"
-		{
-			"srcVar1" "$color2"
-			"srcVar2" "$yellow"
-			"resultVar" "$color2"
-		}
-	}
 	"shader" "shaders/vertexlit.shader"
 }
