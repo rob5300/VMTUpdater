@@ -104,7 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>./ext/;./src/</AdditionalIncludeDirectories>
       <LanguageStandard_C>Default</LanguageStandard_C>
     </ClCompile>
@@ -135,15 +135,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Config.cpp" />
     <ClCompile Include="src\ImageSplitter.cpp" />
     <ClCompile Include="src\VMTNodeUpdater.cpp" />
     <ClCompile Include="src\VMTUpdater.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ext\IL\il.h" />
+    <ClInclude Include="ext\json.hpp" />
     <ClInclude Include="ext\VTFLib.h" />
+    <ClInclude Include="src\Config.h" />
+    <ClInclude Include="src\ImageSplitConfig.h" />
     <ClInclude Include="src\ImageSplitter.h" />
+    <ClInclude Include="src\NodeMappingsConfig.h" />
+    <ClInclude Include="src\OutputInfo.h" />
     <ClInclude Include="src\VMTNodeUpdater.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="ext\VTFLib.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

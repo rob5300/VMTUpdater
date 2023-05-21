@@ -1,7 +1,7 @@
 "Layer0"
 {
-	"TextureColor" "models/weapons/c_models/c_pistol/c_pistol"
-	"F_SPECULAR" "1"
+	"F_SPECULAR" "models/weapons/c_models/c_pistol/c_pistol"
+	"$phong" "1"
 	"$phongexponent" "25"
 	"$phongboost" "10"
 	"$lightwarptexture" "models/lightwarps/weapon_lightwarp"
@@ -20,5 +20,4 @@
 	"$sheenmapmaskframe" "0"
 	"$sheenindex" "0"
 	"$yellow" "0"
-	"shader" "shaders/vertexlit.shader"
 }

@@ -6,8 +6,11 @@
 #include "IL\il.h"
 #include "VMTNodeUpdater.h"
 #include "ImageSplitter.h"
+#include <Config.h>
 
 using namespace std;
+
+Config config;
 
 int main(int argc, char *argv[])
 {
@@ -41,21 +44,15 @@ int main(int argc, char *argv[])
     filesystem::path workingDirPath(workingDir);
     workingDirPath = workingDirPath.lexically_normal();
 
-    //splitter test
-    /* 
-    OutputInfo testOutputs[1];
-    testOutputs[0].inputChannel = A;
-    testOutputs[0].outputFormat = IL_PNG;
-    testOutputs[0].outputChannels = 3;
-    testOutputs[0].outputImageName = L"pistol.png";
-    filesystem::path inputPath = workingDirPath;
-    inputPath /= filesystem::path("c_pistol.vtf");
-    
-    auto pathAsStr = inputPath.string();
-    ImageSplitter testSplitter(testOutputs, 1, pathAsStr.c_str(), 4);
-    testSplitter.Split();
-    return 0;
-    */
+    filesystem::path programPath(argv[0]);
+    programPath = programPath.parent_path();
+    bool configLoadSuccess = false;
+    config = LoadConfig(workingDirPath, programPath, configLoadSuccess);
+    if (!configLoadSuccess)
+    {
+        //Exit early as configs were created
+        return 1;
+    }
 
     //Create updated dir
     auto updatedDir = workingDirPath;
@@ -69,7 +66,7 @@ int main(int argc, char *argv[])
         {
             printf("- Found VMT '%s'\n", dir_entry.path().string().c_str());
 
-            UpdateVMTNodes(dir_entry);
+            UpdateVMTNodes(dir_entry, config);
 
             processedFilesCount++;
         }
@@ -78,5 +75,7 @@ int main(int argc, char *argv[])
     printf("Processed #%i files", processedFilesCount);
     vlShutdown();
     ilShutDown();
+
+    return 0;
 }
 

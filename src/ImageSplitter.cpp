@@ -24,9 +24,9 @@ inline void CopyPixel(int x, int y, unsigned char* input, ILubyte* buffer, Outpu
 	ilSetPixels(x, y, 0, 1, 1, 1, format, IL_UNSIGNED_BYTE, buffer);
 }
 
-ImageSplitter::ImageSplitter(OutputInfo* outputInfos, size_t outputInfosCount, const char* inputImagePath, char inputImgChannels)
+ImageSplitter::ImageSplitter(std::vector<OutputInfo>* outputInfos, const std::string& inputImagePath, char inputImgChannels)
 {
-	this->outputInfos.assign(outputInfos, outputInfos + outputInfosCount);
+	this->outputInfos = outputInfos;
 	this->inputImgChannels = inputImgChannels;
 
 	this->inputImagePath = std::string(inputImagePath);
@@ -34,9 +34,9 @@ ImageSplitter::ImageSplitter(OutputInfo* outputInfos, size_t outputInfosCount, c
 
 bool ImageSplitter::Split()
 {
-	if (outputInfos.size() == 0)
+	if (outputInfos->size() == 0)
 	{
-		printf("No output infos given");
+		printf("ERROR, No output infos given");
 		return false;
 	}
 
@@ -44,7 +44,7 @@ bool ImageSplitter::Split()
 	bool success = vtfFile.Load(inputImagePath.c_str(), false);
 	if (!success)
 	{
-		printf("Failed to load VTF at '%s'", inputImagePath.c_str());
+		printf("ERROR, Failed to load VTF at '%s'", inputImagePath.c_str());
 		return false;
 	}
 
@@ -61,7 +61,7 @@ bool ImageSplitter::Split()
 	ILubyte* copyBuffer = new ILubyte[4];
 
 	//Prepare to create new images
-	size_t outputInfosCount = outputInfos.size();
+	size_t outputInfosCount = outputInfos->size();
 	ILuint* imageIds = new ILuint[outputInfosCount];
 	ilGenImages(outputInfosCount, imageIds);
 
@@ -74,7 +74,7 @@ bool ImageSplitter::Split()
 	}
 	for (size_t i = 0; i < outputInfosCount; i++)
 	{
-		OutputInfo* info = &outputInfos[i];
+		OutputInfo* info = &this->outputInfos->at(i);
 		ilBindImage(imageIds[i]);
 		ilActiveImage(imageIds[i]);
 		ilActiveLayer(0);
@@ -100,7 +100,7 @@ bool ImageSplitter::Split()
 			remove(newPath);
 		}
 
-		bool saveSuccess = ilSave(info->outputFormat, newPathAsString.c_str());
+		bool saveSuccess = ilSave(IL_PNG, newPathAsString.c_str());
 		if (saveSuccess)
 		{
 			printf("Saving new image: %s", newPathAsString.c_str());
