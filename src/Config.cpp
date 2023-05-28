@@ -8,6 +8,7 @@ using namespace std;
 
 #define NODE_MAPPINGS_FILENAME "nodemapping.json"
 #define IMAGE_SPLIT_FILENAME "imageSplit.json"
+#define EXTENSION_DEFAULT ".vmat"
 
 Config LoadConfig(filesystem::path& workingPath, filesystem::path& configPath, bool& success)
 {
@@ -22,15 +23,28 @@ Config LoadConfig(filesystem::path& workingPath, filesystem::path& configPath, b
 			ifstream f(mappingsPath);
 			json data = json::parse(f);
 			newConfig.nodeMappings = data.get<NodeMappingsConfig>();
+
+			if (newConfig.nodeMappings.extension.empty())
+			{
+				newConfig.nodeMappings.extension = EXTENSION_DEFAULT;
+				printf("Extension was empty in %s, defaulted to %s\n", mappingsPath.string().c_str(), EXTENSION_DEFAULT);
+			}
+			else if(newConfig.nodeMappings.extension[0] != '.')
+			{
+				//Add . if missing
+				newConfig.nodeMappings.extension = "." + newConfig.nodeMappings.extension;
+			}
+
 			success = true;
 		}
 		else
 		{
 			//Create default
+			newConfig.nodeMappings.extension = EXTENSION_DEFAULT;
 			newConfig.nodeMappings.shaderNodeName = "shader";
 			newConfig.nodeMappings.shaderReplacementName = "Layer0";
-			newConfig.nodeMappings.shaderMappings["VertexLitGeneric"] = "?";
-			newConfig.nodeMappings.nodeMappings["$basetexture"] = "F_SPECULAR";
+			newConfig.nodeMappings.shaderMappings["VertexLitGeneric"] = "path/to/shader.shader_c";
+			newConfig.nodeMappings.nodeMappings["$basetexture"] = "TextureColor";
 			newConfig.nodeMappings.nodesToRemove.insert("Proxies");
 			
 			json defaultNodeMappings = json(newConfig.nodeMappings);
@@ -59,7 +73,7 @@ Config LoadConfig(filesystem::path& workingPath, filesystem::path& configPath, b
 				relativeImagesPath = relativeImagesPath.lexically_normal();
 				if (!filesystem::exists(relativeImagesPath))
 				{
-					printf("ERROR, Failed to verify the given images path '%s'", newConfig.imageSplit.imagesPath.c_str());
+					printf("ERROR, Failed to verify the given images path '%s'\n", newConfig.imageSplit.imagesPath.c_str());
 					success = false;
 				}
 				else
@@ -75,11 +89,11 @@ Config LoadConfig(filesystem::path& workingPath, filesystem::path& configPath, b
 		{
 			//Create default
 			OutputInfo specularInfo;
-			specularInfo.inputChannel = A;
-			specularInfo.outputChannels = 3;
+			specularInfo.channelMapping = { R, G, B };
 			specularInfo.outputImageName = "specular.png";
 			specularInfo.requiredNode = "$phong";
 			specularInfo.requiredNodeValue = "1";
+			specularInfo.nodeToCreate = "g_specular";
 
 			std::vector<OutputInfo> outputList;
 			outputList.push_back(specularInfo);
@@ -93,7 +107,7 @@ Config LoadConfig(filesystem::path& workingPath, filesystem::path& configPath, b
 	}
 	else
 	{
-		printf("Input folder not found, cannot load config files");
+		printf("Input folder not found, cannot load config files\n");
 		success = false;
 	}
 
@@ -115,6 +129,8 @@ std::string Config::GetNodeMapping(string& nodeName)
 	{
 		return nodeMappings.nodeMappings.at(nodeName);
 	}
+
+	return string();
 }
 
 std::string Config::GetShaderMapping(string& nodeName)
@@ -123,6 +139,8 @@ std::string Config::GetShaderMapping(string& nodeName)
 	{
 		return nodeMappings.shaderMappings.at(nodeName);
 	}
+
+	return string();
 }
 
 bool Config::ShouldNodeBeRemoved(string& nodeName)

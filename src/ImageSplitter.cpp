@@ -12,13 +12,12 @@ inline int GetIndexForPosition(int x, int y, ILint width, ILint height, int chan
 	return (x + y * width) * channels;
 }
 
-inline void CopyPixel(int x, int y, unsigned char* input, ILubyte* buffer, OutputInfo& outputInfo, ILenum format, ILuint channels)
+inline void CopyPixel(int x, int y, unsigned char* input, ILubyte* buffer, OutputInfo& outputInfo, ILenum format)
 {
-	auto inputColor = input + outputInfo.inputChannel;
-	//Set colours of buffer
-	for (size_t i = 0; i < channels; i++)
+	//Set colours of buffer based on info mapping
+	for (size_t i = 0; i < outputInfo.channelMapping.size(); i++)
 	{
-		buffer[i] = *inputColor;
+		buffer[i] = *(input + outputInfo.channelMapping[i]);
 	}
 
 	ilSetPixels(x, y, 0, 1, 1, 1, format, IL_UNSIGNED_BYTE, buffer);
@@ -32,7 +31,7 @@ ImageSplitter::ImageSplitter(std::vector<OutputInfo>* outputInfos, const std::st
 	this->inputImagePath = std::string(inputImagePath);
 }
 
-bool ImageSplitter::Split()
+bool ImageSplitter::Split(std::vector<std::pair<std::string, std::string>> &nodesToModify)
 {
 	if (outputInfos->size() == 0)
 	{
@@ -50,6 +49,12 @@ bool ImageSplitter::Split()
 
 	auto width = vtfFile.GetWidth();
 	auto height = vtfFile.GetHeight();
+
+	bool hasImage = vtfFile.GetHasImage();
+	if (!hasImage) return false;
+
+	bool alphaflag = vtfFile.GetFlag(TEXTUREFLAGS_EIGHTBITALPHA);
+	if (!alphaflag) return false;
 
 	auto inputData = ResolveFormat(vtfFile);
 
@@ -75,11 +80,26 @@ bool ImageSplitter::Split()
 	for (size_t i = 0; i < outputInfosCount; i++)
 	{
 		OutputInfo* info = &this->outputInfos->at(i);
+		ILuint channelCount = info->channelMapping.size();
+
+		//If no mapping/ invalid mapping size, default to RGB
+		if (channelCount <= 0 || channelCount > 4)
+		{
+			info->channelMapping = {R, G, B};
+		}
+
+		//Make filename original name if empty
+		if (info->outputImageName.empty())
+		{
+			info->outputImageName = path(inputImagePath).stem().string();
+		}
+
 		ilBindImage(imageIds[i]);
 		ilActiveImage(imageIds[i]);
 		ilActiveLayer(0);
-		ILenum format = info->outputChannels == 4 ? IL_RGBA : IL_RGB;
-		ilTexImage(width, height, 1, info->outputChannels, format, IL_UNSIGNED_BYTE, NULL);
+		
+		ILenum format = channelCount == 4 ? IL_RGBA : IL_RGB;
+		ilTexImage(width, height, 1, channelCount, format, IL_UNSIGNED_BYTE, NULL);
 
 		for (int y = 0; y < height; y++)
 		{
@@ -87,13 +107,15 @@ bool ImageSplitter::Split()
 			{
 				int index = GetIndexForPosition(x, y, width, height, inputImgChannels);
 				auto pixel = &inputData[index];
-				CopyPixel(x, y, pixel, copyBuffer, *info, format, info->outputChannels);
+				CopyPixel(x, y, pixel, copyBuffer, *info, format);
 			}
 		}
 		
 		//Save new image
 		path newPath = outputPath;
-		newPath /= info->outputImageName;
+		string oldVtfName = path(inputImagePath).stem().string();
+		string newFileName = (oldVtfName + "_" + info->outputImageName);
+		newPath /= newFileName;
 		auto newPathAsString = newPath.string();
 		if (exists(newPath))
 		{
@@ -103,12 +125,17 @@ bool ImageSplitter::Split()
 		bool saveSuccess = ilSave(IL_PNG, newPathAsString.c_str());
 		if (saveSuccess)
 		{
-			printf("Saving new image: %s", newPathAsString.c_str());
+			printf("Saving new image: %s\n", newPathAsString.c_str());
 		}
 		else
 		{
-			printf("FAILED to save new image to %s", newPathAsString.c_str());
+			printf("FAILED to save new image to %s\n", newPathAsString.c_str());
 			return false;
+		}
+
+		if (!info->nodeToCreate.empty())
+		{
+			nodesToModify.push_back({info->nodeToCreate, newFileName});
 		}
 	}
 
@@ -129,6 +156,7 @@ vlByte* ImageSplitter::ResolveFormat(CVTFFile& vtfFile)
 	auto format = vtfFile.GetFormat();
 	auto w = vtfFile.GetWidth();
 	auto h = vtfFile.GetHeight();
+
 	bool rgb8 = format == IMAGE_FORMAT_RGB888;
 	bool rgba8 = format == IMAGE_FORMAT_RGBA8888;
 
@@ -136,7 +164,7 @@ vlByte* ImageSplitter::ResolveFormat(CVTFFile& vtfFile)
 	{
 		if (rgb8 && inputImgChannels != 3 || rgba8 && inputImgChannels != 4)
 		{
-			printf("VTF type missmatch (%s). Expected %i channels", rgb8 ? "rgb8" : "rgba8", inputImgChannels);
+			printf("VTF type missmatch (%s). Expected %i channels\n", rgb8 ? "rgb8" : "rgba8", inputImgChannels);
 			return nullptr;
 		}
 		else
@@ -146,8 +174,14 @@ vlByte* ImageSplitter::ResolveFormat(CVTFFile& vtfFile)
 		}
 	}
 
-	convertedVTF = new vlByte[w * h * 4];
+	int32_t totalSize = w * h * 4;
+	convertedVTF = new vlByte[totalSize];
 	inputImgChannels = 4;
-	vtfFile.ConvertToRGBA8888(vtfFile.GetData(0,0,0,0), convertedVTF, w, h, format);
-	return convertedVTF;
+	auto vtfData = vtfFile.GetData(0, 0, 0, 0);
+	if (vtfData != nullptr)
+	{
+		bool success = vtfFile.ConvertToRGBA8888(vtfData, convertedVTF, w, h, format);
+		return convertedVTF;
+	}
+	return nullptr;
 }

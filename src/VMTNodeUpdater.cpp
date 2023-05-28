@@ -57,7 +57,8 @@ void UpdateVMTNodes(filesystem::path path, Config& _config)
 	//construct new path and save
 	auto newPath = path.parent_path();
 	newPath /= "updated";
-	newPath /= path.filename();
+	newPath /= path.stem();
+	newPath += config->nodeMappings.extension;
 	auto newPathstr = newPath.string();
 	bool saved = vmtFile.Save(newPathstr.c_str());
 	if (saved)
@@ -83,6 +84,8 @@ void UpdateNodeNames(CVMTFile& vmtFile)
 		root->AddStringNode("shader", newShaderName.c_str());
 		printf("- Update shader from %s -> %s\n", oldShader.c_str(), newShaderName.c_str());
 	}
+
+	vector<pair<string, string>> nodesToModify;
 
 	int32_t nodeCount = root->GetNodeCount();
 	for (int i = 0; i < nodeCount; i++)
@@ -121,7 +124,7 @@ void UpdateNodeNames(CVMTFile& vmtFile)
 				printf("- Will run splitter for %i valid matches\n", (int)imageSplitInfos->size());
 				filesystem::path imagePath = FixVMTPath(stringNode->GetValue());
 				ImageSplitter splitter(imageSplitInfos, imagePath.string(), 4);
-				bool success = splitter.Split();
+				bool success = splitter.Split(nodesToModify);
 				printf("- Split success? %s\n", success ? "yes" : "no");
 			}
 		}
@@ -137,7 +140,24 @@ void UpdateNodeNames(CVMTFile& vmtFile)
 		if (config->ShouldNodeBeRemoved(nodeName))
 		{
 			root->RemoveNode(node);
-			printf("- Removed node %s", nodeName.c_str());
+			printf("- Removed node %s\n", nodeName.c_str());
+		}
+	}
+
+	//Add new nodes
+	printf("- %i nodes to change from image splitting:\n", nodesToModify.size());
+	for (const auto& newNodePair : nodesToModify)
+	{
+		auto existingNode = root->GetNode(newNodePair.first.c_str());
+		if (existingNode != nullptr)
+		{
+			static_cast<CVMTStringNode*>(existingNode)->SetValue(newNodePair.second.c_str());
+			printf("- Update existing node '%s' -> %s\n", newNodePair.first.c_str(), newNodePair.second.c_str());
+		}
+		else
+		{
+			root->AddStringNode(newNodePair.first.c_str(), newNodePair.second.c_str());
+			printf("- Insert new node '%s' with value %s\n", newNodePair.first.c_str(), newNodePair.second.c_str());
 		}
 	}
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include "../ext/json.hpp"
 
 enum Channel {R = 0, G = 1, B = 2, A = 3};
@@ -18,13 +19,14 @@ public:
 	//Check if an existing node has a value
 	std::string requiredNodeValue;
 
-	//Input channel
-	Channel inputChannel;
-
-	int32_t outputChannels;
+	//Channel Mapping
+	std::vector<Channel> channelMapping;
 
 	//Output image name + extension
 	std::string outputImageName;
+
+	//Node to insert/modify and add new file name to
+	std::string nodeToCreate;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(OutputInfo, inputChannel, outputChannels, outputImageName, requiredNode, requiredNodeValue)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(OutputInfo, channelMapping, outputImageName, requiredNode, requiredNodeValue, nodeToCreate)

@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
     config = LoadConfig(workingDirPath, programPath, configLoadSuccess);
     if (!configLoadSuccess)
     {
-        //Exit early as configs were created
+        //Exit early as configs were created/ loading failed
         return 1;
     }
 

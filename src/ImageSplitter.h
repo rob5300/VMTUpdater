@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <utility>
 #include "IL\il.h"
 #include "OutputInfo.h"
 #include "../ext/json.hpp"
@@ -11,7 +12,7 @@ class ImageSplitter
 public:
 	ImageSplitter(std::vector<OutputInfo>* outputInfos, const std::string& inputImagePath, char inputImgChannels);
 	//Split image based on output infos given
-	bool Split();
+	bool Split(std::vector<std::pair<std::string, std::string>> &nodesToModify);
 
 private:
 	//Get data (convert to rgba if needed)
